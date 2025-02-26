@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flood Detection Dashboard</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans p-5">
+  <div class="text-center mb-6">
+    <h1 class="text-3xl font-bold text-gray-800">Flood Detection Dashboard</h1>
+  </div>
+
+  <!-- Logout Button -->
+  <div class="flex justify-end mb-6">
+    <button
+      class="flex items-center bg-red-600 text-white py-2 px-4 rounded-lg shadow-md hover:bg-red-700 transition-all"
+      onclick="logout()"
+    >
+      <svg class="w-5 h-5 mr-2" viewBox="0 0 512 512" fill="currentColor">
+        <path
+          d="M377.9 105.9L500.7 228.7c7.2 7.2 11.3 17.1 11.3 27.3s-4.1 20.1-11.3 27.3L377.9 406.1c-6.4 6.4-15 9.9-24 9.9c-18.7 0-33.9-15.2-33.9-33.9l0-62.1-128 0c-17.7 0-32-14.3-32-32l0-64c0-17.7 14.3-32 32-32l128 0 0-62.1c0-18.7 15.2-33.9 33.9-33.9c9 0 17.6 3.6 24 9.9zM160 96L96 96c-17.7 0-32 14.3-32 32l0 256c0 17.7 14.3 32 32 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-64 0c-53 0-96-43-96-96L0 128C0 75 43 32 96 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32z"
+        ></path>
+      </svg>
+      Logout
+    </button>
+  </div>
+
+  <!-- Dashboard Table -->
+  <div class="overflow-x-auto">
+    <table class="min-w-full bg-white rounded-lg shadow-lg border border-gray-200">
+      <thead>
+        <tr class="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+          <th class="py-3 px-6 text-left font-semibold uppercase tracking-wider">Timestamp</th>
+          <th class="py-3 px-6 text-left font-semibold uppercase tracking-wider">Water Level</th>
+          <th class="py-3 px-6 text-left font-semibold uppercase tracking-wider">Alert Message</th>
+        </tr>
+      </thead>
+      <tbody id="dashboard-table" class="divide-y divide-gray-200 text-gray-800">
+        <!-- Data will be inserted dynamically -->
+      </tbody>
+    </table>
+  </div>
+  
+  <script>
+    async function fetchData() {
+      try {
+        const waterLevelsResponse = await fetch('http://localhost:3000/api/water-levels');
+        const alertsResponse = await fetch('http://localhost:3000/api/alerts');
+        
+        if (!waterLevelsResponse.ok || !alertsResponse.ok) {
+          throw new Error('Failed to fetch data');
+        }
+
+        const waterLevels = await waterLevelsResponse.json();
+        const alerts = await alertsResponse.json();
+
+        const combinedData = waterLevels.map((waterLevel, index) => ({
+          timestamp: new Date(waterLevel.timestamp).toLocaleString(),
+          waterLevel: waterLevel.waterLevel,
+          alertMessage: alerts[index]?.alertMessage || 'No Alert',
+        }));
+
+        const tableBody = document.querySelector('#dashboard-table');
+        tableBody.innerHTML = ''; // Clear existing rows
+
+        combinedData.forEach(item => {
+          const row = document.createElement('tr');
+          row.className = 'hover:bg-gray-100 transition-colors';
+          
+          const alertClass = item.alertMessage === 'High Alert' 
+            ? 'text-red-600 font-bold' 
+            : item.alertMessage === 'Safe'
+            ? 'text-green-600 font-semibold'
+            : 'text-gray-600';
+
+          row.innerHTML = `
+            <td class="py-2 px-4">${item.timestamp}</td>
+            <td class="py-2 px-4">${item.waterLevel}</td>
+            <td class="py-2 px-4 ${alertClass}">${item.alertMessage}</td>
+          `;
+          tableBody.appendChild(row);
+        });
+      } catch (err) {
+        console.error('Error fetching data:', err);
+        alert('Unable to load dashboard data. Please try again later.');
+      }
+    }
+
+    function logout() {
+      alert('Logging out...');
+      window.location.href = 'login.html';
+    }
+
+    fetchData();
+  </script>
+</body>
+</html>
